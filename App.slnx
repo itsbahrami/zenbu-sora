@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="src/Api/App.Api.csproj" />
+  <Project Path="src/AppHost/App.AppHost.csproj" />
+  <Project Path="src/Application/App.Application.csproj" />
+  <Project Path="src/Domain/App.Domain.csproj" />
+  <Project Path="src/Infrastructure/App.Infrastructure.csproj" />
+  <Project Path="src/ServiceDefaults/App.ServiceDefaults.csproj" />
+  <Project Path="tests/Application.UnitTests/App.Application.UnitTests.csproj" />
+  <Project Path="tests/Architecture.Tests/App.Architecture.Tests.csproj" />
+</Solution>

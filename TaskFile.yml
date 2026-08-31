@@ -1,0 +1,161 @@
+# https://taskfile.dev
+version: "3"
+
+vars:
+  ASPNETCORE_ENVIRONMENT: Development
+  SOLUTION_FILE_PATH: "./App.slnx"
+  API_PROJECT_PATH: "./src/Api"
+  APP_HOST_PROJECT_PATH: "./src/AppHost"
+  INFRASTRUCTURE_PROJECT_PATH: "./src/Infrastructure"
+  PUBLISH_OUTPUT_PATH: "./publish"
+  NUGET_CONFIG_FILE: "./Nuget.config"
+
+tasks:
+  # ---- meta ----
+  meta:list:
+    aliases: [default, list, l]
+    desc: List all tasks
+    cmds:
+      - task --list-all
+
+  # ---- app ----
+  app:setup:
+    aliases: [setup]
+    desc: Restore dependencies and build the solution
+    cmds:
+      - task: app:restore
+      - task: app:build
+    silent: true
+
+  app:restore:
+    aliases: [restore, r]
+    desc: Restore NuGet packages for the whole solution
+    cmds:
+      - dotnet restore {{.SOLUTION_FILE_PATH}} --configfile {{.NUGET_CONFIG_FILE}}
+    requires:
+      vars: [SOLUTION_FILE_PATH, NUGET_CONFIG_FILE]
+
+  app:clean:
+    aliases: [clean]
+    desc: Clean build artifacts (bin, obj, publish)
+    cmds:
+      - rm -rf ./**/bin
+      - rm -rf ./**/obj
+      - rm -rf {{.PUBLISH_OUTPUT_PATH}}
+    requires:
+      vars: [PUBLISH_OUTPUT_PATH]
+
+  app:nuke:
+    aliases: [nuke]
+    desc: Nuke all build artifacts (clean + restore cache)
+    cmds:
+      - task: app:clean
+      - dotnet nuget locals all --clear
+      - echo "✅ Nuked everything! Run 'task app:setup' to restore."
+
+  # ---- run the whole Aspire application (via AppHost) ----
+  app:dev:
+    aliases: [dev, d]
+    desc: Run the entire Aspire application (AppHost orchestrator)
+    cmds:
+      - dotnet run --project {{.APP_HOST_PROJECT_PATH}} --no-restore --no-build
+    requires:
+      vars: [APP_HOST_PROJECT_PATH]
+
+  app:watch:
+    aliases: [watch, w]
+    desc: Run the Aspire application with hot reload (dotnet watch)
+    cmds:
+      - dotnet watch run --project {{.APP_HOST_PROJECT_PATH}}
+    requires:
+      vars: [APP_HOST_PROJECT_PATH]
+
+  # ---- build & publish ----
+  app:build:
+    aliases: [build, b]
+    desc: Build the solution (Debug configuration)
+    cmds:
+      - dotnet build {{.SOLUTION_FILE_PATH}} --no-restore
+    requires:
+      vars: [SOLUTION_FILE_PATH]
+
+  app:build:full:
+    aliases: [publish, pub, p]
+    desc: Publish the AppHost (produces deployment manifest + all services)
+    cmds:
+      - dotnet publish {{.APP_HOST_PROJECT_PATH}} -c Release -o {{.PUBLISH_OUTPUT_PATH}} --no-restore --configfile {{.NUGET_CONFIG_FILE}}
+    requires:
+      vars: [APP_HOST_PROJECT_PATH, PUBLISH_OUTPUT_PATH, NUGET_CONFIG_FILE]
+
+  # (optional) run the API project directly – for debugging the API in isolation
+  app:dev:api:
+    aliases: [dev-api]
+    desc: Run only the API project (not the full Aspire orchestration)
+    cmds:
+      - dotnet run --project {{.API_PROJECT_PATH}} --no-restore --no-build
+    requires:
+      vars: [API_PROJECT_PATH]
+
+  # ---- quality ----
+  quality:format:
+    aliases: [format, f]
+    desc: Run dotnet format to fix code style
+    cmds:
+      - dotnet format {{.SOLUTION_FILE_PATH}}
+    requires:
+      vars: [SOLUTION_FILE_PATH]
+
+  quality:check:
+    aliases: [check, c]
+    desc: Verify formatting + run static analysis (build triggers analyzers)
+    cmds:
+      - dotnet format {{.SOLUTION_FILE_PATH}} --verify-no-changes
+      - dotnet build {{.SOLUTION_FILE_PATH}} --no-restore
+    requires:
+      vars: [SOLUTION_FILE_PATH]
+
+  # ---- test ----
+  test:
+    aliases: [t]
+    desc: Run all tests (xUnit)
+    cmds:
+      - dotnet test {{.SOLUTION_FILE_PATH}} --no-build --verbosity normal
+    requires:
+      vars: [SOLUTION_FILE_PATH]
+
+  # ---- repo ----
+  repo:zip:
+    aliases: [z]
+    desc: Zip the whole repo
+    cmds:
+      - git archive --format=zip --output=repo.zip HEAD
+
+  repo:clean:
+    aliases: [c]
+    desc: Clean all ignored files & folders (using git)
+    cmds:
+      - git clean -fdX
+
+  # ---- database (EF Core) ----
+  db:generate:
+    aliases: [generate, gen]
+    desc: Create a new EF Core migration
+    cmds:
+      - dotnet ef migrations add {{.MIGRATION_NAME}} -p {{.INFRASTRUCTURE_PROJECT_PATH}} -s {{.API_PROJECT_PATH}} --output-dir Persistence/Migrations {{.CLI_ARGS}}
+    requires:
+      vars: [MIGRATION_NAME, INFRASTRUCTURE_PROJECT_PATH, API_PROJECT_PATH]
+
+  db:apply:
+    aliases: [apply, up]
+    desc: Apply pending migrations to the database
+    cmds:
+      - dotnet ef database update -p {{.INFRASTRUCTURE_PROJECT_PATH}} -s {{.API_PROJECT_PATH}} {{.CLI_ARGS}}
+    requires:
+      vars: [INFRASTRUCTURE_PROJECT_PATH, API_PROJECT_PATH]
+
+  db:migrate:
+    aliases: [migrate, m]
+    desc: Generate a migration, then apply it
+    cmds:
+      - task: db:generate
+      - task: db:apply
