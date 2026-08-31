@@ -1,6 +1,7 @@
 using App.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -12,13 +13,13 @@ public static class AppDbSeeder {
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>(); // <-- Get config
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
 
         await context.Database.MigrateAsync();
 
         await SeedRolesAsync(roleManager, logger);
-        await SeedAdminUserAsync(userManager, logger);
-        await SeedSampleTodosAsync(context, logger);
+        await SeedAdminUserAsync(userManager, configuration, logger);
     }
 
     private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager, ILogger logger) {
@@ -32,57 +33,38 @@ public static class AppDbSeeder {
         }
     }
 
-    private static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager, ILogger logger) {
+    private static async Task SeedAdminUserAsync(
+        UserManager<ApplicationUser> userManager,
+        IConfiguration configuration,
+        ILogger logger
+    ) {
         const string adminEmail = "admin@app.dev";
 
-        if (await userManager.FindByEmailAsync(adminEmail) is not null)
+        if (await userManager.FindByEmailAsync(adminEmail) is not null) {
             return;
+        }
+
+        var adminPassword = configuration["Admin:Password"];
+
+        if (string.IsNullOrEmpty(adminPassword)) {
+            throw new InvalidOperationException(
+                "Admin password is not configured. Please set the 'Admin:Password' environment variable or User Secret."
+            );
+        }
 
         var admin = new ApplicationUser {
-            FirstName = "Admin",
-            LastName = "User",
+            DisplayName = "ادمین",
+            FullName = null,
             Email = adminEmail,
             UserName = adminEmail,
-            EmailConfirmed = true
+            EmailConfirmed = true,
         };
 
-        var result = await userManager.CreateAsync(admin, "Admin@123");
+        var result = await userManager.CreateAsync(admin, adminPassword);
 
         if (result.Succeeded) {
             await userManager.AddToRoleAsync(admin, "Admin");
             logger.LogInformation("Seeded admin user: {Email}", adminEmail);
         }
-    }
-
-    private static async Task SeedSampleTodosAsync(AppDbContext context, ILogger logger) {
-        if (await context.Todos.AnyAsync())
-            return;
-
-        var todos = new List<TodoItem> {
-            new() {
-                Title = "Explore the Clean Architecture template",
-                Description = "Read through the layers: Domain → Application → Infrastructure → Api"
-            },
-            new() {
-                Title = "Run the API with Aspire",
-                Description = "Use 'dotnet run' in the AppHost project to start PostgreSQL, Redis, and the API"
-            },
-            new() {
-                Title = "Try the Scalar API docs",
-                Description = "Navigate to /scalar/v1 to explore and test the endpoints"
-            },
-            new() {
-                Title = "Add your first feature",
-                Description = "Create a new entity, command/query handlers, and endpoint following the Todos pattern"
-            },
-            new() {
-                Title = "Check the architecture tests",
-                Description = "Run 'dotnet test' to verify dependency rules are enforced"
-            }
-        };
-
-        context.Todos.AddRange(todos);
-        await context.SaveChangesAsync();
-        logger.LogInformation("Seeded {Count} sample todos", todos.Count);
     }
 }

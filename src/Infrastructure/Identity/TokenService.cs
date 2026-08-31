@@ -21,8 +21,6 @@ public sealed class TokenService(
         var claims = new List<Claim> {
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Email, user.Email!),
-            new(ClaimTypes.GivenName, user.FirstName),
-            new(ClaimTypes.Surname, user.LastName)
         };
 
         var roles = await userManager.GetRolesAsync(user);

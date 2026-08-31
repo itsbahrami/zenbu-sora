@@ -9,15 +9,19 @@ public sealed class RegisterCommandHandler(
     UserManager<ApplicationUser> userManager
 ) : ICommandHandler<RegisterCommand> {
     public async Task<Result> HandleAsync(RegisterCommand command, CancellationToken cancellationToken = default) {
-        var existingUser = await userManager.FindByEmailAsync(command.Email);
-        if (existingUser is not null)
-            return Result.Failure(Error.Conflict("Auth.EmailTaken", "A user with this email already exists."));
+        var existingUserEmail = await userManager.FindByEmailAsync(command.Email);
+        if (existingUserEmail is not null)
+            return Result.Failure(Error.Conflict("Auth.EmailTaken", "کاربری با این ایمیل وجود داره. یه ایمیل دیگه انتخاب کنین."));
+
+        var existingUsername = await userManager.FindByNameAsync(command.UserName);
+        if (existingUsername is not null)
+            return Result.Failure(Error.Conflict("Auth.UsernameTaken", "کاربری با این نام کاربری وجود داره. یه نام کاربری دیگه انتخاب کنین."));
 
         var user = new ApplicationUser {
-            FirstName = command.FirstName,
-            LastName = command.LastName,
+            FullName = command.FullName,
+            DisplayName = command.DisplayName,
+            UserName = command.UserName,
             Email = command.Email,
-            UserName = command.Email
         };
 
         var result = await userManager.CreateAsync(user, command.Password);

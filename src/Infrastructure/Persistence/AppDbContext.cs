@@ -10,7 +10,6 @@ namespace App.Infrastructure.Persistence;
 public sealed class AppDbContext(
     DbContextOptions<AppDbContext> options
 ) : IdentityDbContext<ApplicationUser>(options), IAppDbContext {
-    public DbSet<TodoItem> Todos => Set<TodoItem>();
     public DbSet<Jotting> Jottings => Set<Jotting>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) {

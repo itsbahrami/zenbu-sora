@@ -4,11 +4,13 @@ namespace App.Application.Features.Identity.Register;
 
 public sealed class RegisterValidator : AbstractValidator<RegisterCommand> {
     public RegisterValidator() {
-        RuleFor(x => x.FirstName)
-            .NotEmpty()
+        RuleFor(x => x.DisplayName)
             .MaximumLength(100);
 
-        RuleFor(x => x.LastName)
+        RuleFor(x => x.FullName)
+            .MaximumLength(100);
+
+        RuleFor(x => x.UserName)
             .NotEmpty()
             .MaximumLength(100);
 

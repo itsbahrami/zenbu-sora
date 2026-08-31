@@ -127,7 +127,6 @@ try {
 
     // Map API endpoints
     app.MapIdentityEndpoints();
-    app.MapTodoEndpoints();
     app.MapWelcomeEndpoints();
     app.MapJottingEndpoints();
 
