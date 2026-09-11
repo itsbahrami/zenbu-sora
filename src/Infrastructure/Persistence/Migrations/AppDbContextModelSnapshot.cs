@@ -147,6 +147,9 @@ namespace App.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SourceUrl")
                         .HasColumnType("TEXT");
 
