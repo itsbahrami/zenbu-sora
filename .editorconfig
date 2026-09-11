@@ -21,3 +21,4 @@ dotnet_separate_import_directive_groups = false
 
 # Rules
 dotnet_diagnostic.CA1873.severity = none
+dotnet_diagnostic.IDE0160.severity = none
