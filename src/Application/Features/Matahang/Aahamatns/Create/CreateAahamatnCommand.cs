@@ -12,4 +12,4 @@ public sealed record CreateAahamatnCommand(
     string? Color,
     string? AudioUrl,
     string? SourceUrl
-) : ICommand<Result<AahamatnResponse>>;
+) : ICommand<Result<AahamatnFullResponse>>;

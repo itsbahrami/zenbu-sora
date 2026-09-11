@@ -2,7 +2,7 @@ using App.Domain.Models.Matahang;
 
 namespace App.Application.Features.Matahang.Aahamatns;
 
-public sealed record AahamatnResponse {
+public sealed record AahamatnFullResponse {
     public required Guid Id { get; init; }
     public required string Title { get; init; }
     public string? Artist { get; init; }
@@ -13,7 +13,7 @@ public sealed record AahamatnResponse {
     public string? SourceUrl { get; init; }
     public DateTimeOffset? UpdatedAt { get; init; }
 
-    public static AahamatnResponse FromDomain(Aahamatn d) => new() {
+    public static AahamatnFullResponse FromDomain(Aahamatn d) => new() {
         Id = d.Id,
         Title = d.Title,
         Language = d.Language,

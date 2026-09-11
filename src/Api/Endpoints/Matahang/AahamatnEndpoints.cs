@@ -2,6 +2,7 @@ using App.Application.Abstractions.Messaging;
 using App.Application.Features.Matahang.Aahamatns;
 using App.Application.Features.Matahang.Aahamatns.Create;
 using App.Application.Features.Matahang.Aahamatns.Delete;
+using App.Application.Features.Matahang.Aahamatns.Get;
 using App.Application.Features.Matahang.Aahamatns.GetAll;
 using App.Application.Features.Matahang.Aahamatns.Update;
 using App.Domain.Common;
@@ -19,7 +20,7 @@ public static class AahamatnEndpoints {
         group.MapGet(
             "/",
             async (
-                IQueryHandler<GetAllAahamatnsQuery, Result<List<AahamatnResponse>>> handler,
+                IQueryHandler<GetAllAahamatnsQuery, Result<AahamatnsResponse>> handler,
                 CancellationToken cancellationToken
             ) => EndpointUtils.AutoResolveOk(
                 await handler.HandleAsync(new GetAllAahamatnsQuery(), cancellationToken)
@@ -27,13 +28,28 @@ public static class AahamatnEndpoints {
         )
         .WithName("GetAllAahamatns")
         .WithSummary("Get all Aahamatns")
-        .Produces<List<AahamatnResponse>>(StatusCodes.Status200OK);
+        .Produces<AahamatnsResponse>(StatusCodes.Status200OK);
+
+        group.MapGet(
+            "/{id:guid}",
+            async (
+                Guid id,
+                IQueryHandler<GetAahamatnQuery, Result<AahamatnFullResponse>> handler,
+                CancellationToken cancellationToken
+            ) => EndpointUtils.AutoResolveOk(
+                await handler.HandleAsync(new GetAahamatnQuery(id), cancellationToken)
+            )
+        )
+        .WithName("GetAahamatn")
+        .WithSummary("Get an Aahamatn")
+        .Produces<AahamatnFullResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
 
         group.MapPost(
             "/",
             async (
                 CreateAahamatnCommand command,
-                ICommandHandler<CreateAahamatnCommand, Result<AahamatnResponse>> handler,
+                ICommandHandler<CreateAahamatnCommand, Result<AahamatnFullResponse>> handler,
                 CancellationToken cancellationToken
             ) => EndpointUtils.AutoResolveOk(
                 await handler.HandleAsync(command, cancellationToken)
@@ -41,7 +57,7 @@ public static class AahamatnEndpoints {
         )
         .WithName("CreateAahamatn")
         .WithSummary("Create a new Aahamatn")
-        .Produces<AahamatnResponse>(StatusCodes.Status201Created)
+        .Produces<AahamatnFullResponse>(StatusCodes.Status201Created)
         .ProducesValidationProblem(StatusCodes.Status400BadRequest);
 
         group.MapPut(
@@ -53,16 +69,7 @@ public static class AahamatnEndpoints {
                 CancellationToken cancellationToken
             ) => EndpointUtils.AutoResolveNoContent(
                 await handler.HandleAsync(
-                    new UpdateAahamatnCommand(
-                        id,
-                        request.Title,
-                        request.Language,
-                        request.Lyrics,
-                        request.Artist,
-                        request.Color,
-                        request.AudioUrl,
-                        request.SourceUrl
-                    ),
+                    request with { Id = id },
                     cancellationToken
                 )
             )

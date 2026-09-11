@@ -1,4 +1,5 @@
 using App.Application.Abstractions.Data;
+using App.Application.Abstractions.Identity;
 using App.Application.Abstractions.Messaging;
 using App.Domain.Common;
 using Microsoft.EntityFrameworkCore;
@@ -6,15 +7,15 @@ using Microsoft.EntityFrameworkCore;
 namespace App.Application.Features.Matahang.Aahamatns.Update;
 
 public sealed class UpdateAahamatnCommandHandler(
-    IAppDbContext db
+    IAppDbContext db,
+    ICurrentUser user
 ) : ICommandHandler<UpdateAahamatnCommand, Result> {
     public async Task<Result> HandleAsync(
         UpdateAahamatnCommand command,
         CancellationToken cancellationToken = default
     ) {
-        // Filter by BOTH Id AND OwnerId in one go
         var aahamatn = await db.Aahamatns
-            .FirstOrDefaultAsync(a => a.Id == command.Id, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Id == command.Id && a.OwnerId == user.UserIdGuid, cancellationToken);
 
         if (aahamatn is null) {
             return Result.Failure(Error.NotFound(

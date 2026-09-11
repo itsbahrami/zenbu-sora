@@ -5,7 +5,12 @@ namespace App.Domain.Models.Matahang;
 /// <summary>
 /// The lyrics of a song, without the music itself. 🫠
 /// </summary>
-public sealed class Aahamatn : AggregateRoot {
+public sealed class Aahamatn : AggregateRoot, IHasOwner {
+    /// <summary>
+    /// The ID of the user that is the owner.
+    /// </summary>
+    public required Guid OwnerId { get; init; }
+
     /// <summary>
     /// The song title.
     /// </summary>
