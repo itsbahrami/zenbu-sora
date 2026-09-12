@@ -101,8 +101,6 @@ try {
 
     app.UseRequestLocalization();
 
-    app.UseCors("Frontend");
-
     // --------------------------------------------------------------
     // Serve static files from wwwroot (React Vite SPA build output)
     // --------------------------------------------------------------
@@ -111,6 +109,8 @@ try {
 
     // Enable endpoint routing (explicit, though often implicit)
     app.UseRouting();
+
+    app.UseCors("Frontend");
 
     // OpenAPI & Scalar (can be placed before or after auth)
     app.MapOpenApi();
